@@ -22,19 +22,25 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-# install.packages("tidyverse")
+if(!require(tidyverse)) install.packages("tidyverse")
 library(tidyverse)
-#install.packages("dataMaid")
+
+if(!require(dataMaid)) install.packages("dataMaid")
 library(dataMaid)
-# install.packages("skimr")
+
+if(!require(skimr)) install.packages("skimr")
 library(skimr)
-# install.packages("outliers")
+
+if(!require(outliers)) install.packages("outliers")
 library(outliers)
-# install.packages("rstatix")
+
+if(!require(rstatix)) install.packages("rstatix")
 library(rstatix)
-# install.packages("EnvStats")
+
+if(!require(EnvStats)) install.packages("EnvStats")
 library(EnvStats)
-# install.packages("MVN")
+
+if(!require(MVN)) install.packages("MVN")
 library(MVN)
 ```
 
@@ -46,25 +52,22 @@ library(MVN)
 
 В качестве примера данных загрузим датасет из проекта 1 (убедитесь, что загрузили эти данные в папку с этим Rmd файлом).
 
-```{r}
-main_dir <- dirname(rstudioapi::getSourceEditorContext()$path) 
-setwd(main_dir)
+```{r dir}
+# main_dir <- dirname(rstudioapi::getSourceEditorContext()$path) 
+# setwd(main_dir)
 day_df <- read_csv("day.csv")
 head(day_df)
-head(iris)
 ```
 
 **Рассматриваемые подходы и пакеты:**
 
--   **`boxplot`**: встроенная функция, позволяющая строить графики и визуально оценивать наличие выбросов.
-
 1.  **`dataMaid`**: Помогает автоматизировать проверку качества данных. Он может находить пропуски, ошибки в типах данных, выбросы, а также автоматически создавать отчёты по результатам анализа.
 2.  **`skimr`**: Пакет для быстрого суммарного обзора данных, включая пропущенные значения, распределение переменных и типы данных.
-3.  **`psych`**: обеспечивает удобное и элегантное представление ваших данных.
-4.  **`outliers`**: содержит тесты для оценки достоверности наличия выбросов.
-5.  **`EnvStats`**: позволяет определить и оценить потенциальные выбросы.
-6.  **`rstatix`**: содержит функции для выявления одномерных и многомерных выбросов.
-7.  **`rstatix`**: позволяет искать многомерные выбросы на основе расстояния Махаланобиса и скорректированного расстояния Махаланобиса.
+3.  **`outliers`**: содержит тесты для оценки достоверности наличия выбросов.
+4.  **`EnvStats`**: позволяет определить и оценить потенциальные выбросы.
+5.  **`rstatix`**: позволяет искать многомерные выбросы на основе расстояния Махаланобиса и скорректированного расстояния Махаланобиса.
+
+-   **`boxplot`**: встроенная функция, позволяющая строить графики и визуально оценивать наличие выбросов.
 
 ## 1. dataMaid
 
@@ -74,7 +77,7 @@ head(iris)
 
 > The customizability features of `dataMaid` essentially comes down to writing such `summaryFunctions`, `visualFunctions` and `checkFunctions`.
 
-```{r}
+```{r datareport}
 makeDataReport(day_df)
 # генерируем отчет в html
 makeDataReport(day_df, output = "html", replace = TRUE)
@@ -97,7 +100,7 @@ makeDataReport(day_df, output = "html", replace = TRUE)
 
 Основной функцией пакета skimr является функция skim(), которая предназначена для работы с (группированными) датафреймами, она пытается преобразовать другие объекты в датафреймы, если это возможно. Подобно функции summary(), метод skim() для датафреймов отображает результаты для каждого столбца.
 
-```{r}
+```{r skim}
 skim(day_df)
 ```
 
@@ -111,14 +114,14 @@ skim(day_df)
 
 В отличие от функции summary.data.frame(), которая хранит статистику в виде таблицы, объект skim_df имеет свои особенности. Это различие важно, поскольку skim_df можно использовать в пайпах, что облегчает дальнейшую работу с данными. Например, Вы можете выбрать все средние значения переменных или получить сводную статистику для конкретной переменной. Например, получим сводную статистику для столбца Petal.Length:
 
-```{r}
+```{r skim_specify}
 skim(day_df) %>%
   dplyr::filter(skim_variable == "hum") # поддерживается большинство функций из пакета dplyr  
 ```
 
 Помимо датафреймов во второй версии пакета skimr функция skim() может анализировать векторы и матрицы путем преобразования их в датафрейм подобно тому как это делает функция as.data.frame():
 
-```{r}
+```{r skim_vector}
 # Обработка векторов
 hum <- day_df$hum # выделяем вектор из данных.
 
@@ -129,7 +132,7 @@ all.equal(skim(hum), skim(as.data.frame(hum)))
 # Вывод означает, что объекты, которые мы сравнивали с помощью функции all.equal(), очень похожи, но отличаются в одном атрибуте, конкретно в компоненте df_name.
 ```
 
-```{r}
+```{r scim_matrix_processing}
 # Обработка матриц
 day_matrix <- as.matrix(day_df)
 
@@ -140,7 +143,7 @@ skim(day_matrix) # аналогична функциям summary.matrix() и col
 
 Функция skim_tee() в пакете skimr позволяет получать ту же сводную информацию, что и skim(), но при этом возвращает исходный, неизменённый датафрейм. Это позволяет продолжить работу с оригинальными данными после получения сводной статистики. Посмотрим статистику для day_df, а затем отфильтруем датафрейм по рабочим дням:
 
-```{r}
+```{r scim_matrix}
 day_working <- day_df %>%
   skim_tee() %>%
   dplyr::filter(workingday == "1")
@@ -149,7 +152,7 @@ day_working <- day_df %>%
 
 Функция partition() разделяет результаты, полученные от skim(), на именованный список, где каждый элемент списка соответствует сводной информации для конкретного типа данных:
 
-```{r}
+```{r skim_partition}
 day_df %>%
   skim() %>%
   partition()
@@ -157,7 +160,7 @@ day_df %>%
 
 Функция yank() в свою очередь извлекает подтаблицу, соответствующую конкретному типу данных. Воспринимайте это как о dplyr::select для типов столбцов в исходных данных:
 
-```{r}
+```{r skim_yank}
 day_df %>%
   skim() %>%
   yank("numeric")
@@ -169,7 +172,7 @@ day_df %>%
 
 Объект skim_df, получаемый от skim(), представлен в виде широкого датафрейма. По умолчанию его отображение осуществляется с помощью функции print.skim_df(). Для документов, создаваемых с использованием knitr, пакет skimr предоставляет специальный метод knit_print, который автоматически форматирует вывод. Чтобы использовать этот метод, последний оператор в вашем коде должен возвращать объект skim_df.
 
-```{r}
+```{r skim_1}
 skim(day_df)
 
 ```
@@ -178,18 +181,13 @@ skim(day_df)
 
 Пакет [**outliers**](https://cran.r-project.org/web/packages/outliers/outliers.pdf) содержит в себе несколько статистических тестов, позволяющих оценить наличие выбросов в принципе или задать их вручную и оценить достоверность этих выбросов.
 
-```{r}
-# install.packages("outliers")
-# library(outliers)
-```
-
 1.  Тест Грабса
 
 позволяет оценить, является ли максимальное или минимальное значение выбросом и оценивает уровень значимости. Работает на выборках размером больше $6$.
 
 По умолчанию считает нижний порог, чтобы посчитать статистику верхнего, нужно добавить параметр `opposite = TRUE`.
 
-```{r}
+```{r grubbs.test}
 day_df = read.csv('day.csv')
 grubbs.test(day_df$hum)
 grubbs.test(day_df$hum, opposite = TRUE)
@@ -197,7 +195,7 @@ grubbs.test(day_df$hum, opposite = TRUE)
 
 В данном случае мы отвергаем, что значение $0.9725$ это выброс, но принимаем, что $0$ это выброс. Смотрим на графике:
 
-```{r}
+```{r plot}
 out_day_df <- boxplot.stats(day_df$hum)$out
 boxplot(day_df$hum)
 mtext(paste("Outlier: ", paste(out_day_df, collapse = ", ")))
@@ -207,7 +205,7 @@ mtext(paste("Outlier: ", paste(out_day_df, collapse = ", ")))
 
 в отличие от теста Грабса, работает на маленьких выборках $<=25$.
 
-```{r}
+```{r dixon.test}
 subday_df <- day_df[1:25, ] # отбираем из датасета первых 20 значений.
 dixon.test(subday_df$hum)
 ```
@@ -216,7 +214,7 @@ dixon.test(subday_df$hum)
 
 Можно перепроверить это с помощью boxplot.
 
-```{r}
+```{r plot2}
 out <- boxplot.stats(subday_df$hum)$out
 
 boxplot(subday_df$hum)
@@ -233,7 +231,7 @@ mtext(paste("Outlier: ", paste(out, collapse = ", ")))
 
 Посмотрим на boxplot, чтобы определить потенциальное количество выбросов.
 
-```{r}
+```{r EnvStats}
 out_day_df <- boxplot.stats(day_df$hum)$out
 boxplot(day_df$hum)
 mtext(paste("Outlier: ", paste(out_day_df, collapse = ", ")))
@@ -241,7 +239,7 @@ mtext(paste("Outlier: ", paste(out_day_df, collapse = ", ")))
 
 При применении теста мы видим, что реальным выбросом является только 0. Второе значение не является выбросом. Мы можем узнать номер выброса в таблице при выводе теста, а вывод all.stats показывает нам произведённые расчёты. Функция автоматически удаляет NA из данных перед подсчётом квантилей.
 
-```{r}
+```{r rosnerTest}
 test <- rosnerTest(day_df$hum, k = 2)
 test$all.stats
 ```
@@ -250,12 +248,7 @@ test$all.stats
 
 Пакет [**rstatix**](https://cran.r-project.org/web/packages/rstatix/rstatix.pdf) содержит функции для выявления одномерных и многомерных выбросов. Ищет с помощью boxplot и квартилей. Определяет выбросы и экстремальные выбросы с помощью квантилей (выше Q3 + 3 x IQR или ниже Q1 - 3 x IQR).
 
-```{r}
-# install.packages('rstatix')
-library(rstatix)
-```
-
-```{r}
+```{r rstatix}
 out_rstatix = identify_outliers(data = day_df, variable = 'hum')
 out_rstatix
 ```
@@ -266,7 +259,7 @@ out_rstatix
 
 С помощью функции mvn из пакета можно нарисовать графики Q-Q plot с выбросами на них по каждому из наблюдений, а также скорректированный график $\chi$-square.
 
-```{r}
+```{r mvn}
 # install.packages("MVN")
 library(MVN)
 
@@ -279,15 +272,13 @@ result = mvn(data = sub_days, subset = "weekday", mvnTest = "hz",
 result$multivariateOutliers
 ```
 
-## \*\* Boxplot
-
-## boxplot
+## \* boxplot
 
 Попробуем "полуавтоматический" поиск выбросов. Такой способ позволяет контролировать каждый этап. Воспользуемся встроенным методом boxplot.
 
 С помощью Boxplot можно не только увидеть выбросы графически, но и сохранить их для последующего отсечения из данных. Для визуализации возьмём рандомные данные.
 
-```{r}
+```{r data}
 # создаём данные: с выбросами и без.
 dirty_data <- c(4.358015, 4.489513, 4.560919, 4.613810, 4.599738, 4.621614, 4.633119, 4.616862, 4.754681, 4.849953, 4.945791, 5.019631, 4.805033, 4.989170, 5.024305, 5.065325, 4.970247, 4.998086, 5.096887, 4.977657, 4.888269, 3.479053, 2.878145)
 
@@ -308,7 +299,7 @@ boxplot.stats(y)\$out
 
 Можно найти индексы точек выбросов.
 
-```{r}
+```{r out_indexes}
 ind <- which(dirty_data %in% boxplot.stats(dirty_data)$out)
 
 ind
@@ -316,7 +307,7 @@ ind
 
 Сохраним координаты точек выбросов в отдельном dataframe
 
-```{r}
+```{r out_coord}
 out <- data.frame(data=data[ind], dirty_data=dirty_data[ind])
 out
 ```
@@ -330,27 +321,27 @@ out
 -   группа: общее количество групп.
 -   имена: имена каждой группы.
 
-```{r}
+```{r boxplot}
 res <- boxplot(dirty_data)
 res
 ```
 
 И с помощью созданной переменной можно снова создать boxplot.
 
-```{r}
+```{r bxp}
 bxp(res)
 ```
 
 Теперь визуализируем их на обычном графике:
 
-```{r}
+```{r plot3}
 plot(data, dirty_data, col='green', pch=18, ylim=c(0,max(dirty_data)))
 points(out$data, out$dirty_data, col='red', pch=18)
 ```
 
 Удалим точки из данных.
 
-```{r}
+```{r cleaning}
 clean_data <- dirty_data[-ind]
 data_data <- data[-ind]
 clean_data
@@ -359,14 +350,14 @@ data_data
 
 Сравним боксплоты с выбросами и без них:
 
-```{r}
+```{r boxplot2}
 boxplot(dirty_data, data_data)
 boxplot(clean_data, data_data)
 ```
 
 Сравним графики с выбросами и без них:
 
-```{r}
+```{r plot4}
 plot(data, dirty_data, col='green', pch=18, ylim=c(0,max(dirty_data)))
 points(out$data, out$dirty_data, col='red', pch=18)
 
